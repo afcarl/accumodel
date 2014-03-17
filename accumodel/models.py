@@ -21,9 +21,6 @@ class WaldAntiPDA(hddm.models.HLBA):
                     'v_pro': 1, 'v_anti': 1, 'v_stop': 1,
                     't_anti': .01}
 
-    pro_like = staticmethod(likelihoods.wald_pro_like)
-    gen_data_anti = staticmethod(likelihoods.gen_data_wald_anti)
-
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
                                 ('v_pro', (0, 3)),
@@ -35,9 +32,14 @@ class WaldAntiPDA(hddm.models.HLBA):
         knodes = OrderedDict()
         knodes.update(self._create_family_gamma_gamma_hnormal('t', g_mean=.3, g_std=1., std_std=.5, std_value=0.2, value=0.1))
         knodes.update(self._create_family_gamma_gamma_hnormal('a', g_mean=2., g_std=.75, std_std=2, std_value=0.1, value=2.))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_pro', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_anti', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('t_anti', g_mean=.1, g_std=1, std_std=2, std_value=0.1, value=.1))
+        if 'v_pro' in self.param_ranges:
+            knodes.update(self._create_family_gamma_gamma_hnormal('v_pro', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
+        if 'v_stop' in self.param_ranges:
+            knodes.update(self._create_family_gamma_gamma_hnormal('v_stop', g_mean=1.5, g_std=1, std_std=2, std_value=0.1, value=1.5))
+        if 'v_anti' in self.param_ranges:
+            knodes.update(self._create_family_gamma_gamma_hnormal('v_anti', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
+        if 't_anti' in self.param_ranges:
+            knodes.update(self._create_family_gamma_gamma_hnormal('t_anti', g_mean=.1, g_std=1, std_std=2, std_value=0.1, value=.1))
         return knodes
 
     def create_knodes(self):
@@ -61,7 +63,7 @@ class WaldAntiPDA(hddm.models.HLBA):
         parents['a'] = knodes['a_bottom']
         parents['v_pro'] = knodes['v_pro_bottom']
 
-        return Knode(self.pro_like, 'pro', observed=True, col_name=['rt', 'cond'], **parents)
+        return Knode(likelihoods.wald_pro_like, 'pro', observed=True, col_name=['rt', 'cond'], **parents)
 
     @property
     def aic(self):
@@ -74,9 +76,23 @@ class WaldAntiPDA(hddm.models.HLBA):
         n = len(self.data)
         return -2 * self.mc.logp + k * np.log(n)
 
+    @staticmethod
+    def gen_data_anti(t=.3, a=2., v_pro=1., v_anti=1., t_anti=1.):
+        if t < 0 or a < 0 or v_pro < 0 or v_anti < 0 or t_anti < 0:
+            return None
 
-class WaldAntiStopPDA(hddm.models.HLBA):
-    gen_data_anti = staticmethod(likelihoods.gen_data_wald_anti)
+        func = likelihoods.fast_invgauss
+        x_pro = copy(func(t, a, v_pro, accum=0))
+        x_anti = func(t + t_anti, a, v_anti, accum=1)
+
+        idx = x_pro > x_anti
+        x_pro[idx] = -x_anti[idx]
+        data = x_pro
+
+        return data
+
+
+class WaldAntiStop(WaldAntiPDA):
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
                                 ('v_pro', (0, 3)),
@@ -84,21 +100,29 @@ class WaldAntiStopPDA(hddm.models.HLBA):
                                 ('v_anti', (0, 3)),
                                 ('t_anti', (0, .5)),
                                ])
+    @staticmethod
+    def gen_data_anti(t=.3, a=2., v_pro=1., v_stop=1., v_anti=1., t_anti=1., p_stop=1):
+        from scipy.stats import bernoulli
+        if t < 0 or a < 0 or v_pro < 0 or v_anti < 0 or t_anti < 0:
+            return None
 
-    def _create_stochastic_knodes_info(self):
-        knodes = OrderedDict()
-        knodes.update(self._create_family_gamma_gamma_hnormal('t', g_mean=.3, g_std=1., std_std=.5, std_value=0.2, value=0.1))
-        knodes.update(self._create_family_gamma_gamma_hnormal('a', g_mean=2., g_std=.75, std_std=2, std_value=0.1, value=2.))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_pro', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_stop', g_mean=1.5, g_std=1, std_std=2, std_value=0.1, value=1.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_anti', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('t_anti', g_mean=.1, g_std=1, std_std=2, std_value=0.1, value=.1))
-        return knodes
+        func = likelihoods.fast_invgauss
+        x_pro = copy(func(t, a, v_pro, accum=0))
+        x_anti = func(t + t_anti, a, v_anti, accum=1)
+        x_stop = func(t, a, v_stop, accum=2)
+        if p_stop != 1:
+            stop = bernoulli(p_stop).rvs(x_stop.shape)
+            x_stop[np.logical_not(stop)] = np.inf
 
+        x_pro[x_pro > x_stop] = np.inf
+
+        idx = x_pro > x_anti
+        x_pro[idx] = -x_anti[idx]
+        data = x_pro
+
+        return data
 
 class WaldAntiPFC(WaldAntiPDA):
-    gen_data_anti = staticmethod(likelihoods.gen_data_wald_anti_pfc)
-
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
                                 ('v_pro', (0, 3)),
@@ -106,15 +130,29 @@ class WaldAntiPFC(WaldAntiPDA):
                                 ('v_anti', (0, 3)),
                                ])
 
+    @staticmethod
+    def gen_data_anti(t, a, v_pro, v_stop, v_anti, p_stop=1):
+        from scipy.stats import bernoulli
+        if t < 0 or a < 0 or v_pro < 0 or v_anti < 0:
+            return None
 
-    def _create_stochastic_knodes_info(self):
-        knodes = OrderedDict()
-        knodes.update(self._create_family_gamma_gamma_hnormal('t', g_mean=.3, g_std=1., std_std=.5, std_value=0.2, value=0.1))
-        knodes.update(self._create_family_gamma_gamma_hnormal('a', g_mean=2., g_std=.75, std_std=2, std_value=0.1, value=2.))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_pro', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_stop', g_mean=1.5, g_std=1, std_std=2, std_value=0.1, value=1.5))
-        knodes.update(self._create_family_gamma_gamma_hnormal('v_anti', g_mean=.5, g_std=1, std_std=2, std_value=0.1, value=.5))
-        return knodes
+        func = likelihoods.fast_invgauss
+        x_pro = copy(func(t, a, v_pro, accum=0))
+        x_stop = func(t, a, v_stop, accum=1)
+
+        if p_stop != 1:
+            stop = bernoulli(p_stop).rvs(x_stop.shape)
+            x_stop[np.logical_not(stop)] = np.inf
+
+        x_anti = func(t, a, v_anti, accum=2) + x_stop
+
+        x_pro[x_pro > x_stop] = np.inf
+
+        idx = x_pro > x_anti
+        x_pro[idx] = -x_anti[idx]
+        data = x_pro
+
+        return data
 
 
 def estimate_wald((subj_idx, data), debug=False, **kwargs):

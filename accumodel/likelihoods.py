@@ -43,7 +43,6 @@ def numba_invgauss(t, a, v, u_rands, chi_rands, out, sigma, accum):
     i = 0
     mu = a / v
     lam = a**2 / sigma**2
-    #cdef double[:] out = np.empty(u_rands.shape[0], dtype=np.double)
 
     for i in range(size):
         y2 = chi_rands[i, accum]
@@ -125,78 +124,8 @@ def pda_like_auto(data, func, **kwargs):
     if np.any(data < 0):
         logp[data < 0] = pda_single(-synth_data[synth_data < 0], -data[data < 0]) + np.log(1 - p)
 
-
     return add_outlier_prob(logp)
 
-def gen_simple(t, a, v1, v2):
-    if (a < 0) or (v1 < 0) or (v2 < 0):
-        return None
-
-    x1 = fast_invgauss(t, a, v1, accum=0)
-    x2 = fast_invgauss(t, a, v2, accum=1)
-    idx = x1 > x2
-    x1[idx] = -x2[idx]
-    data = x1
-
-    return data
-
-def gen_data_wald_anti(t=.3, a=2., v_pro=1., v_anti=1., t_anti=1.):
-    if t < 0 or a < 0 or v_pro < 0 or v_anti < 0 or t_anti < 0:
-        return None
-
-    func = fast_invgauss
-    x_pro = copy(func(t, a, v_pro, accum=0))
-    x_anti = func(t + t_anti, a, v_anti, accum=1)
-
-    idx = x_pro > x_anti
-    x_pro[idx] = -x_anti[idx]
-    data = x_pro
-
-    return data
-
-def gen_data_wald_anti_stop(t=.3, a=2., v_pro=1., v_stop=1., v_anti=1., t_anti=1., p_stop=1):
-    from scipy.stats import bernoulli
-    if t < 0 or a < 0 or v_pro < 0 or v_anti < 0 or t_anti < 0:
-        return None
-
-    func = fast_invgauss
-    x_pro = copy(func(t, a, v_pro, accum=0))
-    x_anti = func(t + t_anti, a, v_anti, accum=1)
-    x_stop = func(t, a, v_stop, accum=2)
-    if p_stop != 1:
-        stop = bernoulli(p_stop).rvs(x_stop.shape)
-        x_stop[np.logical_not(stop)] = np.inf
-
-    x_pro[x_pro > x_stop] = np.inf
-
-    idx = x_pro > x_anti
-    x_pro[idx] = -x_anti[idx]
-    data = x_pro
-
-    return data
-
-def gen_data_wald_anti_pfc(t, a, v_pro, v_stop, v_anti, p_stop=1):
-    from scipy.stats import bernoulli
-    if t < 0 or a < 0 or v_pro < 0 or v_anti < 0:
-        return None
-
-    func = fast_invgauss
-    x_pro = copy(func(t, a, v_pro, accum=0))
-    x_stop = func(t, a, v_stop, accum=1)
-
-    if p_stop != 1:
-        stop = bernoulli(p_stop).rvs(x_stop.shape)
-        x_stop[np.logical_not(stop)] = np.inf
-
-    x_anti = func(t, a, v_anti, accum=2) + x_stop
-
-    x_pro[x_pro > x_stop] = np.inf
-
-    idx = x_pro > x_anti
-    x_pro[idx] = -x_anti[idx]
-    data = x_pro
-
-    return data
 
 def stochastic_from_dist_args(name, logp, args, random=None, logp_partial_gradients={}, dtype=np.dtype('O'), mv=True):
     parent_names = args
@@ -206,7 +135,6 @@ def stochastic_from_dist_args(name, logp, args, random=None, logp_partial_gradie
 
     return new_dist_class(dtype, name, parent_names, {}, docstr, logp,
                           random, mv, {})
-
 
 def gen_pda_stochastic(gen_func, pda_func=pda_like_auto, selector=None):
     if selector is None:
@@ -226,6 +154,18 @@ def gen_pda_stochastic(gen_func, pda_func=pda_like_auto, selector=None):
     pda.pdf = pdf
 
     return pda
+
+def gen_simple(t, a, v1, v2):
+    if (a < 0) or (v1 < 0) or (v2 < 0):
+        return None
+
+    x1 = fast_invgauss(t, a, v1, accum=0)
+    x2 = fast_invgauss(t, a, v2, accum=1)
+    idx = x1 > x2
+    x1[idx] = -x2[idx]
+    data = x1
+
+    return data
 
 
 wald_pro_like = stochastic_from_dist_args(name="Wiener pro pda",
