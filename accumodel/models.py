@@ -68,13 +68,15 @@ class WaldAntiPDA(hddm.models.HLBA):
     @property
     def aic(self):
         k = len(self.get_stochastics())
-        return 2 * k - self.mc.logp
+        logp = sum([x.logp for x in self.get_observeds()['node']])
+        return 2 * k - logp
 
     @property
     def bic(self):
         k = len(self.get_stochastics())
         n = len(self.data)
-        return -2 * self.mc.logp + k * np.log(n)
+        logp = sum([x.logp for x in self.get_observeds()['node']])
+        return -2 * logp + k * np.log(n)
 
     @staticmethod
     def gen_data_anti(t=.3, a=2., v_pro=1., v_anti=1., t_anti=1.):
