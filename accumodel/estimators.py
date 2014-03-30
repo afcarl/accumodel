@@ -13,8 +13,8 @@ import pymc as pm
 from copy import copy
 from scipy import stats
 
-from accumodel import models
-from accumodel import likelihoods
+from . import models
+from . import likelihoods
 
 class OptimizeEstimator(object):
     def __init__(self, model_class):
