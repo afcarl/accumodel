@@ -5,7 +5,9 @@ from . import estimators
 ESTIMATOR = None
 
 def set_estimator(estimator):
+    global ESTIMATOR
     ESTIMATOR = estimator
 
-def instantiate_estimator(*args, **kwargs):
-    return ESTIMATOR(*args, **kwargs)
+def get_estimator():
+    global ESTIMATOR
+    return ESTIMATOR

@@ -156,21 +156,23 @@ class WaldAntiPFC(WaldAntiPDA):
 
         return data
 
-def estimate_subj((subj_idx, data), **kwargs):
-    est = accumodel.instantiate_estimator()
+def estimate_subj((subj_idx, data), debug=False, **kwargs):
+    from . import get_estimator
+    est = get_estimator()
     est.setup_model(data, **kwargs)
     recovery = est.estimate(data, use_basin=True, minimizer_kwargs={'maxiter': 100000, 'disp': 1},
-                            fall_to_simplex=False)
+                            fall_to_simplex=False, debug=debug)
 
     return pd.DataFrame(recovery, index=[subj_idx])
 
-def run_single(data, **kwargs):
-    est = accumodel.instantiate_estimator()
+def run_single(data, debug=False, **kwargs):
+    from . import get_estimator
+    est = get_estimator()
     est.setup_model(data, **kwargs)
     recovery = est.estimate(data,
                             use_basin=True,
                             minimizer_kwargs={'maxiter': 100000, 'disp': 1},
-                            fall_to_simplex=False)
+                            fall_to_simplex=False, debug=debug)
     return recovery
 
 def recreate_model(data, params, model, **kwargs):
