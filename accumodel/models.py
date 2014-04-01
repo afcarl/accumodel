@@ -23,8 +23,8 @@ class WaldAntiPDA(hddm.models.HLBA):
 
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
-                                ('v_pro', (0, 3)),
-                                ('v_anti', (0, 3)),
+                                ('v_pro', (0, 5.)),
+                                ('v_anti', (0, 5.)),
                                 ('t_anti', (0, .5)),
                                ])
 
@@ -97,9 +97,9 @@ class WaldAntiPDA(hddm.models.HLBA):
 class WaldAntiStop(WaldAntiPDA):
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
-                                ('v_pro', (0, 3)),
-                                ('v_stop', (0, 3)),
-                                ('v_anti', (0, 3)),
+                                ('v_pro', (0, 5.)),
+                                ('v_stop', (0, 5.)),
+                                ('v_anti', (0, 5.)),
                                 ('t_anti', (0, .5)),
                                ])
     @staticmethod
@@ -149,9 +149,9 @@ class WaldAntiNoStop(WaldAntiPDA):
 class WaldAntiPFC(WaldAntiPDA):
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
-                                ('v_pro', (0, 3)),
-                                ('v_pfc', (0, 3)),
-                                ('v_anti', (0, 3)),
+                                ('v_pro', (0, 5.)),
+                                ('v_pfc', (0, 5.)),
+                                ('v_anti', (0, 3.)),
                                ])
 
     @staticmethod
