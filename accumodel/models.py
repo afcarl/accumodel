@@ -176,7 +176,7 @@ class WaldAntiPFC(WaldAntiPDA):
 def estimate_subj((subj_idx, data), debug=False, **kwargs):
     from . import get_estimator
     est = get_estimator()
-    est.setup_model(data, **kwargs)
+    est.setup_model(data, is_group_model=False, **kwargs)
     recovery = est.estimate(data, use_basin=True, minimizer_kwargs={'maxiter': 100000, 'disp': 1},
                             fall_to_simplex=False, debug=debug)
 
@@ -185,7 +185,7 @@ def estimate_subj((subj_idx, data), debug=False, **kwargs):
 def run_single(data, debug=False, **kwargs):
     from . import get_estimator
     est = get_estimator()
-    est.setup_model(data, **kwargs)
+    est.setup_model(data, is_group_model=False, **kwargs)
     recovery = est.estimate(data,
                             use_basin=True,
                             minimizer_kwargs={'maxiter': 100000, 'disp': 1},
