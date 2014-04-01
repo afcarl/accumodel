@@ -173,7 +173,7 @@ def run_single(data, debug=False, **kwargs):
                             use_basin=True,
                             minimizer_kwargs={'maxiter': 100000, 'disp': 1},
                             fall_to_simplex=False, debug=debug)
-    return recovery
+    return pd.DataFrame(recovery)
 
 def recreate_model(data, params, model, **kwargs):
     m = model(data, **kwargs)
