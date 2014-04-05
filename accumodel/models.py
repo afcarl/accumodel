@@ -150,19 +150,19 @@ class WaldAntiPFC(WaldAntiPDA):
     param_ranges = OrderedDict([('t', (0, .5)),
                                 ('a', (.5, 3.5)),
                                 ('v_pro', (0, 5.)),
-                                ('v_pfc', (0, 5.)),
+                                ('v_stop', (0, 5.)),
                                 ('v_anti', (0, 3.)),
                                ])
 
     @staticmethod
-    def gen_data_anti(t=.3, a=2., v_pro=1., v_pfc=1., v_anti=1.):
+    def gen_data_anti(t=.3, a=2., v_pro=1., v_stop=1., v_anti=1.):
         from scipy.stats import bernoulli
         if t < 0 or a < 0 or v_pro < 0 or v_anti < 0:
             return None
 
         func = likelihoods.fast_invgauss
         x_pro = copy(func(t, a, v_pro, accum=0))
-        x_pfc = func(t, a, v_pfc, accum=1)
+        x_pfc = func(t, a, v_stop, accum=1)
         x_anti = func(t, a, v_anti, accum=2) + x_pfc
 
         x_pro[x_pro > x_pfc] = np.inf
