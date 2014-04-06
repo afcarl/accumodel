@@ -104,7 +104,6 @@ class WaldAntiStop(WaldAntiPDA):
                                ])
     @staticmethod
     def gen_data_anti(t=.3, a=2., v_pro=1., v_stop=1., v_anti=1., t_anti=1.):
-        from scipy.stats import bernoulli
         if t < 0 or a < 0 or v_pro < 0 or v_anti < 0 or t_anti < 0:
             return None
 
@@ -112,9 +111,38 @@ class WaldAntiStop(WaldAntiPDA):
         x_pro = copy(func(t, a, v_pro, accum=0))
         x_anti = func(t + t_anti, a, v_anti, accum=1)
         x_stop = func(t, a, v_stop, accum=2)
-        # if p_stop != 1:
-        #     stop = bernoulli(p_stop).rvs(x_stop.shape)
-        #     x_stop[np.logical_not(stop)] = np.inf
+
+        x_pro[x_pro > x_stop] = np.inf
+
+        idx = x_pro > x_anti
+        x_pro[idx] = -x_anti[idx]
+        data = x_pro
+
+        return data
+
+class WaldAntiStopProb(WaldAntiPDA):
+    param_ranges = OrderedDict([('t', (0, .5)),
+                                ('a', (.5, 3.5)),
+                                ('v_pro', (0, 5.)),
+                                ('v_stop', (0, 5.)),
+                                ('v_anti', (0, 5.)),
+                                ('t_anti', (0, .5)),
+                                ('p_stop', (0, 1))
+                               ])
+    @staticmethod
+    def gen_data_anti(t=.3, a=2., v_pro=1., v_stop=1., v_anti=1.,
+                      t_anti=1., p_stop=1.):
+        from scipy.stats import bernoulli
+        if t < 0 or a < 0 or v_pro < 0 or v_anti < 0 or t_anti < 0 or p_stop < 0 or p_stop > 1:
+            return None
+
+        func = likelihoods.fast_invgauss
+        x_pro = copy(func(t, a, v_pro, accum=0))
+        x_anti = func(t + t_anti, a, v_anti, accum=1)
+        x_stop = func(t, a, v_stop, accum=2)
+        if p_stop < 1:
+            stop = bernoulli(p_stop).rvs(x_stop.shape)
+            x_stop[np.logical_not(stop)] = np.inf
 
         x_pro[x_pro > x_stop] = np.inf
 
