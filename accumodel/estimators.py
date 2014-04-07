@@ -125,3 +125,14 @@ class OptimizeEstimator(AbstractEstimator):
             if np.abs(v) < 1e-3:
                 values[k] = 1e-4
         return pd.Series(values.values(), index=values.keys())
+
+
+class SamplePPCEstimator(AbstractEstimator):
+    def estimate(self, data, init=None, samples=2000, burn=100, **kwargs):
+        self.model.set_params(init)
+        self.model.sample(samples, burn)
+
+        ppc_data = hddm.utils.post_pred_gen(self.model)
+        ppc_compare = hddm.utils.post_pred_stats(data, ppc_data)
+
+        return ppc_compare
