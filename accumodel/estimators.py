@@ -16,7 +16,7 @@ from scipy import stats
 from . import models
 from . import likelihoods
 
-class OptimizeEstimator(object):
+class AbstractEstimator(object):
     def __init__(self, model_class):
         self.model_class = model_class
 
@@ -49,6 +49,11 @@ class OptimizeEstimator(object):
 
         return data
 
+    def estimate(self, *args, **kwargs):
+        raise NotImplementedError('estimate has to be overwritten.')
+
+
+class OptimizeEstimator(AbstractEstimator):
     def estimate(self, data, minimizer='Powell', use_basin=False,
                  minimizer_kwargs=None, basin_kwargs=None, init=None, **kwargs):
         #assert self.model.nodes_db.ix['anti', 'node'].parents['v_pro'] is self.model.nodes_db.ix['pro', 'node'].parents['v']
