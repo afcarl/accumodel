@@ -83,7 +83,7 @@ class WaldAntiPDA(hddm.models.HLBA):
         if 't_anti' in self.param_ranges:
             knodes.update(self._create_family_gamma_gamma_hnormal('t_anti', g_mean=.1, g_std=1, std_std=2, std_value=0.1, value=.1))
         if 'p_stop' in self.param_ranges:
-            knodes.update(self._create_family_beta('p_stop', g_mean=.9, g_std=1, std_std=2, std_value=0.1, value=.9))
+            knodes.update(self._create_family_beta('p_stop', value=.9, g_value=.9, g_mean=.9, g_certainty=2, var_alpha=1, var_beta=1, var_value=.1))
         return knodes
 
     def create_knodes(self):
