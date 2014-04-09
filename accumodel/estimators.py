@@ -54,9 +54,12 @@ class AbstractEstimator(object):
 
 
 class OptimizeEstimator(AbstractEstimator):
-    def estimate(self, data, minimizer='Powell', use_basin=False,
-                 minimizer_kwargs=None, basin_kwargs=None, init=None, **kwargs):
-        #assert self.model.nodes_db.ix['anti', 'node'].parents['v_pro'] is self.model.nodes_db.ix['pro', 'node'].parents['v']
+    def estimate(self, data, minimizer='Powell', use_basin=True,
+                 minimizer_kwargs=None, fall_to_simplex=False,
+                 basin_kwargs=None, init=None, **kwargs):
+        if minimizer_kwargs is None:
+            minimizer_kwargs = {'maxiter': 100000, 'disp': 1}
+
         if init is not None:
             self.model.set_values(init)
         print self.model.mc.logp
@@ -115,7 +118,7 @@ class OptimizeEstimator(AbstractEstimator):
                             'callback': print_fun,
                            }
 
-        self.model.approximate_map(use_basin=use_basin, minimizer=minimizer,
+        self.model.approximate_map(use_basin=use_basin, minimizer=minimizer, fall_to_simplex=fall_to_simplex,
                                    basin_kwargs=basin_kwargs, minimizer_kwargs=minimizer_kwargs, **kwargs)
 
 
@@ -129,7 +132,7 @@ class OptimizeEstimator(AbstractEstimator):
 
 class SamplePPCEstimator(AbstractEstimator):
     def estimate(self, data, init=None, samples=2000, burn=100, **kwargs):
-        self.model.set_params(init)
+        self.model.set_values(init)
         self.model.sample(samples, burn)
 
         ppc_data = hddm.utils.post_pred_gen(self.model)
