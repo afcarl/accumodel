@@ -113,7 +113,7 @@ class WaldAntiPDA(hddm.models.HLBA):
     def aic(self):
         k = len(self.get_stochastics())
         logp = sum([x.logp for x in self.get_observeds()['node']])
-        return 2 * k - logp
+        return 2 * k - 2 * logp
 
     @property
     def bic(self):
