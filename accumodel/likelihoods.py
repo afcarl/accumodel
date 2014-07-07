@@ -148,8 +148,8 @@ def gen_pda_stochastic(gen_func, pda_func=pda_like_auto, selector=None):
     )
 
     def pdf(self, value):
-        args = [self.parents[p].value for p in self.parents]
-        return np.exp(pda_func(value, gen_func, *args))
+        params = {p: self.parents[p].value for p in self.parents}
+        return np.exp(pda_func(value, gen_func, **params))
 
     pda.pdf = pdf
 
